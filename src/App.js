@@ -5,7 +5,11 @@ import AuthPage from './pages/AuthPage'
 import Today from './pages/Today'
 import Recipes from './pages/Recipes'
 import Production from './pages/Production'
+import Inventory from './pages/Inventory'
 import Suppliers from './pages/Suppliers'
+import StaffLabor from './pages/StaffLabor'
+import CashFlow from './pages/CashFlow'
+import Reports from './pages/Reports'
 
 const ADMIN_EMAIL = 'nabasingabeth@gmail.com'
 const TRIAL_DAYS = 7
@@ -30,7 +34,7 @@ const NAV = [
   { id: 'suppliers',  icon: '🛒', label: 'Suppliers',        section: 'BUSINESS'   },
   { id: 'staff',      icon: '👩‍🍳', label: 'Staff & Labor',   section: 'BUSINESS'   },
   { id: 'cashflow',   icon: '💳', label: 'Cash Flow',        section: 'FINANCE'    },
-  { id: 'reports',    icon: '📊', label: 'Reports',          section: 'FINANCE'    },
+  { id: 'reports',    icon: '📊', label: 'Reports & AI',     section: 'FINANCE'    },
 ]
 
 function Inner() {
@@ -95,14 +99,12 @@ function Inner() {
       case 'today':      return <Today onNavigate={setPage} />
       case 'recipes':    return <Recipes />
       case 'production': return <Production />
+      case 'inventory':  return <Inventory />
       case 'suppliers':  return <Suppliers />
-      default: return (
-        <div style={comingSoon}>
-          <div style={{ fontSize: 48, marginBottom: 14 }}>🔨</div>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: '#F0C040', marginBottom: 8 }}>Coming Soon</div>
-          <div style={{ fontSize: 13, color: 'rgba(253,246,236,0.4)', lineHeight: 1.7 }}>This module is being built and will be available shortly.</div>
-        </div>
-      )
+      case 'staff':      return <StaffLabor />
+      case 'cashflow':   return <CashFlow />
+      case 'reports':    return <Reports />
+      default:           return <Today onNavigate={setPage} />
     }
   }
 
@@ -164,19 +166,9 @@ function Paywall({ user, signOut }) {
         <div style={{ fontSize: 40, marginBottom: 12 }}>🧁</div>
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 900, color: '#F0C040', marginBottom: 6 }}>Bakery CFO</div>
         <div style={{ fontSize: 12, color: '#C8862A', fontFamily: "'DM Mono', monospace", letterSpacing: 2, marginBottom: 20 }}>TRIAL EXPIRED</div>
-        <div style={{ fontSize: 13, color: 'rgba(253,246,236,0.6)', marginBottom: 24, lineHeight: 1.7 }}>Your free trial has ended. Subscribe to keep accessing your bakery data.</div>
-        <div style={{ background: 'rgba(26,14,8,0.6)', border: '1px solid rgba(200,134,42,0.25)', borderRadius: 14, padding: '20px', marginBottom: 20 }}>
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 900, color: '#F0C040', marginBottom: 4 }}>UGX 50,000<span style={{ fontSize: 14, color: 'rgba(253,246,236,0.5)' }}>/month</span></div>
-          <div style={{ fontSize: 12, color: 'rgba(253,246,236,0.5)' }}>Full access to all modules</div>
-        </div>
-        <div style={{ background: 'rgba(200,134,42,0.08)', border: '1px solid rgba(200,134,42,0.2)', borderRadius: 10, padding: 16, textAlign: 'left', marginBottom: 16 }}>
-          <div style={{ fontSize: 9, color: '#C8862A', fontFamily: "'DM Mono', monospace", letterSpacing: 1.5, marginBottom: 10 }}>HOW TO SUBSCRIBE</div>
-          {['Send UGX 50,000 via MTN or Airtel Money', 'Number: +256 XXX XXX XXX', 'WhatsApp your payment confirmation', 'We activate within 1 hour'].map((step, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, fontSize: 13, color: 'rgba(253,246,236,0.7)' }}>
-              <span style={{ background: '#C8862A', color: '#1A0E08', borderRadius: '50%', width: 20, height: 20, minWidth: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{i + 1}</span>
-              {step}
-            </div>
-          ))}
+        <div style={{ fontSize: 13, color: 'rgba(253,246,236,0.6)', marginBottom: 24, lineHeight: 1.7 }}>Your free trial has ended. Subscribe to continue.</div>
+        <div style={{ background: 'rgba(26,14,8,0.6)', border: '1px solid rgba(200,134,42,0.25)', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 900, color: '#F0C040' }}>UGX 50,000<span style={{ fontSize: 14, color: 'rgba(253,246,236,0.5)' }}>/month</span></div>
         </div>
         <div style={{ fontSize: 11, color: 'rgba(253,246,236,0.3)', marginBottom: 14 }}>Signed in as {user.email}</div>
         <button onClick={signOut} style={{ background: 'transparent', color: 'rgba(253,246,236,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 20px', fontSize: 12, cursor: 'pointer' }}>Sign Out</button>
@@ -219,5 +211,3 @@ const st = {
   todayBtn: { background: 'rgba(200,134,42,0.2)', color: '#C8862A', border: '1px solid rgba(200,134,42,0.3)', borderRadius: 7, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' },
   content: { flex: 1, overflowY: 'auto', padding: '20px 24px' },
 }
-
-const comingSoon = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 400, textAlign: 'center' }
