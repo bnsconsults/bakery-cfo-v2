@@ -1,8 +1,91 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthContext'
 
 const blank = { name: '', stock: '', unit: 'kg', reorder_level: '', cost_per_unit: '', expiry_date: '', supplier_id: '' }
+
+const COMMON_INGREDIENTS = [
+  { name: 'Wheat Flour', unit: 'kg', cost: 3500, category: 'Flours' },
+  { name: 'Cake Flour', unit: 'kg', cost: 4500, category: 'Flours' },
+  { name: 'Self-Raising Flour', unit: 'kg', cost: 4800, category: 'Flours' },
+  { name: 'Whole Wheat Flour', unit: 'kg', cost: 5000, category: 'Flours' },
+  { name: 'Cornflour', unit: 'kg', cost: 6000, category: 'Flours' },
+  { name: 'Semolina', unit: 'kg', cost: 4000, category: 'Flours' },
+  { name: 'Oats', unit: 'kg', cost: 7000, category: 'Flours' },
+  { name: 'Sugar', unit: 'kg', cost: 4000, category: 'Sweeteners' },
+  { name: 'Icing Sugar', unit: 'kg', cost: 5500, category: 'Sweeteners' },
+  { name: 'Brown Sugar', unit: 'kg', cost: 5000, category: 'Sweeteners' },
+  { name: 'Caster Sugar', unit: 'kg', cost: 5200, category: 'Sweeteners' },
+  { name: 'Honey', unit: 'kg', cost: 18000, category: 'Sweeteners' },
+  { name: 'Golden Syrup', unit: 'kg', cost: 12000, category: 'Sweeteners' },
+  { name: 'Butter', unit: 'kg', cost: 18000, category: 'Dairy & Fats' },
+  { name: 'Margarine', unit: 'kg', cost: 9000, category: 'Dairy & Fats' },
+  { name: 'Shortening', unit: 'kg', cost: 11000, category: 'Dairy & Fats' },
+  { name: 'Vegetable Oil', unit: 'L', cost: 7000, category: 'Dairy & Fats' },
+  { name: 'Coconut Oil', unit: 'L', cost: 15000, category: 'Dairy & Fats' },
+  { name: 'Milk', unit: 'L', cost: 3000, category: 'Dairy & Fats' },
+  { name: 'Fresh Cream', unit: 'L', cost: 12000, category: 'Dairy & Fats' },
+  { name: 'Whipping Cream', unit: 'L', cost: 14000, category: 'Dairy & Fats' },
+  { name: 'Cream Cheese', unit: 'kg', cost: 35000, category: 'Dairy & Fats' },
+  { name: 'Condensed Milk', unit: 'kg', cost: 8000, category: 'Dairy & Fats' },
+  { name: 'Evaporated Milk', unit: 'L', cost: 6500, category: 'Dairy & Fats' },
+  { name: 'Yoghurt', unit: 'L', cost: 5000, category: 'Dairy & Fats' },
+  { name: 'Eggs', unit: 'doz', cost: 6000, category: 'Eggs' },
+  { name: 'Egg Whites', unit: 'L', cost: 8000, category: 'Eggs' },
+  { name: 'Egg Yolks', unit: 'L', cost: 8000, category: 'Eggs' },
+  { name: 'Yeast (Dry)', unit: 'kg', cost: 15000, category: 'Leavening' },
+  { name: 'Yeast (Fresh)', unit: 'kg', cost: 8000, category: 'Leavening' },
+  { name: 'Baking Powder', unit: 'kg', cost: 12000, category: 'Leavening' },
+  { name: 'Baking Soda', unit: 'kg', cost: 8000, category: 'Leavening' },
+  { name: 'Cream of Tartar', unit: 'kg', cost: 20000, category: 'Leavening' },
+  { name: 'Salt', unit: 'kg', cost: 1500, category: 'Leavening' },
+  { name: 'Vanilla Extract', unit: 'ml', cost: 25000, category: 'Flavourings' },
+  { name: 'Vanilla Essence', unit: 'ml', cost: 12000, category: 'Flavourings' },
+  { name: 'Almond Extract', unit: 'ml', cost: 22000, category: 'Flavourings' },
+  { name: 'Lemon Extract', unit: 'ml', cost: 18000, category: 'Flavourings' },
+  { name: 'Orange Extract', unit: 'ml', cost: 18000, category: 'Flavourings' },
+  { name: 'Rose Water', unit: 'ml', cost: 10000, category: 'Flavourings' },
+  { name: 'Cinnamon', unit: 'kg', cost: 20000, category: 'Flavourings' },
+  { name: 'Nutmeg', unit: 'kg', cost: 35000, category: 'Flavourings' },
+  { name: 'Cardamom', unit: 'kg', cost: 40000, category: 'Flavourings' },
+  { name: 'Ginger (Ground)', unit: 'kg', cost: 15000, category: 'Flavourings' },
+  { name: 'Mixed Spice', unit: 'kg', cost: 25000, category: 'Flavourings' },
+  { name: 'Cocoa Powder', unit: 'kg', cost: 22000, category: 'Chocolate' },
+  { name: 'Dark Chocolate', unit: 'kg', cost: 45000, category: 'Chocolate' },
+  { name: 'Milk Chocolate', unit: 'kg', cost: 40000, category: 'Chocolate' },
+  { name: 'White Chocolate', unit: 'kg', cost: 42000, category: 'Chocolate' },
+  { name: 'Chocolate Chips', unit: 'kg', cost: 38000, category: 'Chocolate' },
+  { name: 'Raisins', unit: 'kg', cost: 14000, category: 'Fruits & Nuts' },
+  { name: 'Sultanas', unit: 'kg', cost: 15000, category: 'Fruits & Nuts' },
+  { name: 'Dates', unit: 'kg', cost: 12000, category: 'Fruits & Nuts' },
+  { name: 'Dried Apricots', unit: 'kg', cost: 20000, category: 'Fruits & Nuts' },
+  { name: 'Almonds', unit: 'kg', cost: 35000, category: 'Fruits & Nuts' },
+  { name: 'Walnuts', unit: 'kg', cost: 30000, category: 'Fruits & Nuts' },
+  { name: 'Cashew Nuts', unit: 'kg', cost: 28000, category: 'Fruits & Nuts' },
+  { name: 'Groundnuts', unit: 'kg', cost: 8000, category: 'Fruits & Nuts' },
+  { name: 'Desiccated Coconut', unit: 'kg', cost: 16000, category: 'Fruits & Nuts' },
+  { name: 'Fondant', unit: 'kg', cost: 20000, category: 'Decorating' },
+  { name: 'Marzipan', unit: 'kg', cost: 25000, category: 'Decorating' },
+  { name: 'Food Colouring (Red)', unit: 'ml', cost: 5000, category: 'Decorating' },
+  { name: 'Food Colouring (Blue)', unit: 'ml', cost: 5000, category: 'Decorating' },
+  { name: 'Food Colouring (Yellow)', unit: 'ml', cost: 5000, category: 'Decorating' },
+  { name: 'Sprinkles', unit: 'kg', cost: 18000, category: 'Decorating' },
+  { name: 'Edible Glitter', unit: 'g', cost: 15000, category: 'Decorating' },
+  { name: 'Sugar Paste', unit: 'kg', cost: 22000, category: 'Decorating' },
+  { name: 'Strawberry Jam', unit: 'kg', cost: 10000, category: 'Fillings' },
+  { name: 'Apricot Jam', unit: 'kg', cost: 9000, category: 'Fillings' },
+  { name: 'Lemon Curd', unit: 'kg', cost: 12000, category: 'Fillings' },
+  { name: 'Caramel Sauce', unit: 'kg', cost: 14000, category: 'Fillings' },
+  { name: 'Peanut Butter', unit: 'kg', cost: 15000, category: 'Fillings' },
+  { name: 'Nutella', unit: 'kg', cost: 30000, category: 'Fillings' },
+  { name: 'Cake Boxes', unit: 'pcs', cost: 1500, category: 'Packaging' },
+  { name: 'Cupcake Cases', unit: 'pcs', cost: 200, category: 'Packaging' },
+  { name: 'Baking Paper', unit: 'pcs', cost: 500, category: 'Packaging' },
+  { name: 'Bread Bags', unit: 'pcs', cost: 300, category: 'Packaging' },
+  { name: 'Ribbon', unit: 'pcs', cost: 800, category: 'Packaging' },
+]
+
+const CATEGORIES = [...new Set(COMMON_INGREDIENTS.map(i => i.category))]
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -13,6 +96,11 @@ export default function Inventory() {
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('all')
+  const [nameInput, setNameInput] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeCategory, setActiveCategory] = useState('All')
+  const nameRef = useRef(null)
 
   useEffect(() => { load() }, [])
 
@@ -23,6 +111,35 @@ export default function Inventory() {
     ])
     setItems(ingRes.data || [])
     setSuppliers(suppRes.data || [])
+  }
+
+  const handleNameChange = (val) => {
+    setNameInput(val)
+    setForm({ ...form, name: val })
+    if (val.length >= 2) {
+      const matches = COMMON_INGREDIENTS.filter(ci =>
+        ci.name.toLowerCase().includes(val.toLowerCase())
+      )
+      setSuggestions(matches.slice(0, 6))
+      setShowSuggestions(matches.length > 0)
+    } else {
+      setSuggestions([])
+      setShowSuggestions(false)
+    }
+  }
+
+  const pickSuggestion = (ci) => {
+    setNameInput(ci.name)
+    setForm({ ...form, name: ci.name, unit: ci.unit, cost_per_unit: ci.cost })
+    setSuggestions([])
+    setShowSuggestions(false)
+  }
+
+  const quickAdd = (ci) => {
+    setNameInput(ci.name)
+    setForm({ ...form, name: ci.name, unit: ci.unit, cost_per_unit: ci.cost })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setTimeout(() => nameRef.current?.focus(), 300)
   }
 
   const save = async (e) => {
@@ -40,11 +157,12 @@ export default function Inventory() {
     } else {
       await supabase.from('ingredients').insert(payload)
     }
-    setForm(blank); setEditId(null); setSaving(false); load()
+    setForm(blank); setNameInput(''); setEditId(null); setSaving(false); load()
   }
 
   const edit = (item) => {
     setForm({ name: item.name, stock: item.stock, unit: item.unit, reorder_level: item.reorder_level, cost_per_unit: item.cost_per_unit, expiry_date: item.expiry_date || '', supplier_id: item.supplier_id || '' })
+    setNameInput(item.name)
     setEditId(item.id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -67,6 +185,10 @@ export default function Inventory() {
     if (tab === 'expiring') return expiringSoon.find(e => e.id === i.id)
     return true
   })
+
+  const filteredQuick = activeCategory === 'All'
+    ? COMMON_INGREDIENTS
+    : COMMON_INGREDIENTS.filter(ci => ci.category === activeCategory)
 
   return (
     <div>
@@ -96,8 +218,28 @@ export default function Inventory() {
           <div style={s.cardTitle}>{editId ? '✏️ EDIT INGREDIENT' : '+ ADD INGREDIENT'}</div>
           <form onSubmit={save}>
             <div style={s.formGrid}>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <F label="INGREDIENT NAME" value={form.name} onChange={v => setForm({ ...form, name: v })} placeholder="e.g. Wheat Flour" required />
+              <div style={{ gridColumn: '1 / -1', position: 'relative' }}>
+                <label style={s.label}>INGREDIENT NAME</label>
+                <input
+                  ref={nameRef}
+                  style={s.input}
+                  value={nameInput}
+                  onChange={e => handleNameChange(e.target.value)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  onFocus={() => nameInput.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
+                  placeholder="Type to search (e.g. 'su' → Sugar)..."
+                  required
+                />
+                {showSuggestions && (
+                  <div style={s.dropdown}>
+                    {suggestions.map(ci => (
+                      <div key={ci.name} style={s.dropItem} onMouseDown={() => pickSuggestion(ci)}>
+                        <span style={{ color: '#FDF6EC', fontWeight: 600 }}>{ci.name}</span>
+                        <span style={{ color: 'rgba(253,246,236,0.4)', fontSize: 11 }}>{ci.unit} · UGX {fmt(ci.cost)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <F label="CURRENT STOCK" type="number" value={form.stock} onChange={v => setForm({ ...form, stock: v })} placeholder="0" required />
               <div>
@@ -114,28 +256,38 @@ export default function Inventory() {
                   <label style={s.label}>SUPPLIER</label>
                   <select style={s.input} value={form.supplier_id} onChange={e => setForm({ ...form, supplier_id: e.target.value })}>
                     <option value="">No supplier</option>
-                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    {suppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
                   </select>
                 </div>
               )}
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
               <button type="submit" style={s.btn} disabled={saving}>{saving ? 'Saving...' : editId ? 'Update Ingredient' : '+ Add Ingredient'}</button>
-              {editId && <button type="button" style={s.btnSec} onClick={() => { setForm(blank); setEditId(null) }}>Cancel</button>}
+              {editId && <button type="button" style={s.btnSec} onClick={() => { setForm(blank); setNameInput(''); setEditId(null) }}>Cancel</button>}
             </div>
           </form>
         </div>
 
         <div style={s.card}>
-          <div style={s.cardTitle}>QUICK ADD — COMMON BAKERY INGREDIENTS</div>
-          <div style={{ fontSize: 12, color: 'rgba(253,246,236,0.5)', marginBottom: 12 }}>Click to auto-fill the form</div>
-          <div style={s.quickGrid}>
-            {COMMON_INGREDIENTS.map(ci => (
-              <div key={ci.name} style={s.quickChip} onClick={() => setForm({ ...form, name: ci.name, unit: ci.unit, cost_per_unit: ci.cost })}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#FDF6EC' }}>{ci.name}</div>
-                <div style={{ fontSize: 10, color: 'rgba(253,246,236,0.4)' }}>{ci.unit} · ~UGX {fmt(ci.cost)}</div>
-              </div>
+          <div style={s.cardTitle}>QUICK ADD — {COMMON_INGREDIENTS.length} BAKERY INGREDIENTS</div>
+          <div style={{ fontSize: 12, color: 'rgba(253,246,236,0.5)', marginBottom: 10 }}>Click any item to auto-fill the form</div>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+            {['All', ...CATEGORIES].map(cat => (
+              <button key={cat} onClick={() => setActiveCategory(cat)}
+                style={{ ...s.catBtn, ...(activeCategory === cat ? s.catBtnActive : {}) }}>
+                {cat}
+              </button>
             ))}
+          </div>
+          <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+            <div style={s.quickGrid}>
+              {filteredQuick.map(ci => (
+                <div key={ci.name} style={s.quickChip} onClick={() => quickAdd(ci)}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#FDF6EC' }}>{ci.name}</div>
+                  <div style={{ fontSize: 10, color: 'rgba(253,246,236,0.4)' }}>{ci.unit} · ~UGX {fmt(ci.cost)}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -193,21 +345,6 @@ export default function Inventory() {
   )
 }
 
-const COMMON_INGREDIENTS = [
-  { name: 'Wheat Flour', unit: 'kg', cost: 3500 },
-  { name: 'Sugar', unit: 'kg', cost: 4000 },
-  { name: 'Butter', unit: 'kg', cost: 18000 },
-  { name: 'Eggs', unit: 'doz', cost: 6000 },
-  { name: 'Milk', unit: 'L', cost: 3000 },
-  { name: 'Yeast', unit: 'kg', cost: 15000 },
-  { name: 'Salt', unit: 'kg', cost: 1500 },
-  { name: 'Baking Powder', unit: 'kg', cost: 12000 },
-  { name: 'Vanilla Extract', unit: 'ml', cost: 25000 },
-  { name: 'Cocoa Powder', unit: 'kg', cost: 22000 },
-  { name: 'Cream Cheese', unit: 'kg', cost: 35000 },
-  { name: 'Cinnamon', unit: 'kg', cost: 20000 },
-]
-
 const KPI = ({ label, value, color }) => (
   <div style={s.kpi}>
     <div style={s.kpiLabel}>{label}</div>
@@ -239,10 +376,14 @@ const s = {
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' },
   label: { display: 'block', fontSize: 10, color: '#C8862A', fontFamily: "'DM Mono', monospace", letterSpacing: 1.5, marginBottom: 5, marginTop: 10 },
   input: { width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(200,134,42,0.25)', borderRadius: 7, color: '#FDF6EC', fontFamily: "'DM Sans', sans-serif", fontSize: 13, boxSizing: 'border-box' },
+  dropdown: { position: 'absolute', top: '100%', left: 0, right: 0, background: '#2A1A10', border: '1px solid rgba(200,134,42,0.4)', borderRadius: 8, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', overflow: 'hidden' },
+  dropItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(200,134,42,0.1)', fontSize: 13 },
   btn: { padding: '10px 20px', background: '#C8862A', color: '#1A0E08', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   btnSec: { padding: '10px 16px', background: 'rgba(200,134,42,0.15)', color: '#C8862A', border: '1px solid rgba(200,134,42,0.3)', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
-  quickGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 },
-  quickChip: { background: 'rgba(26,14,8,0.5)', border: '1px solid rgba(200,134,42,0.15)', borderRadius: 8, padding: '8px 10px', cursor: 'pointer' },
+  catBtn: { padding: '3px 10px', border: '1px solid rgba(200,134,42,0.2)', borderRadius: 20, background: 'transparent', color: 'rgba(253,246,236,0.4)', fontSize: 10, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
+  catBtnActive: { background: 'rgba(200,134,42,0.25)', color: '#F0C040', borderColor: 'rgba(200,134,42,0.5)' },
+  quickGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 },
+  quickChip: { background: 'rgba(26,14,8,0.5)', border: '1px solid rgba(200,134,42,0.15)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer' },
   filterTabs: { display: 'flex', gap: 6, marginBottom: 14 },
   filterTab: { padding: '5px 14px', border: '1px solid rgba(200,134,42,0.2)', borderRadius: 20, background: 'transparent', color: 'rgba(253,246,236,0.5)', fontSize: 11, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   filterTabActive: { background: 'rgba(200,134,42,0.2)', color: '#C8862A', borderColor: 'rgba(200,134,42,0.4)' },
